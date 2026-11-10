@@ -55,7 +55,7 @@ export default function Community() {
   }));
 
   return (
-    <main className="min-h-screen bg-slate-50 p-8">
+    <main className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="mx-auto max-w-6xl">
         <h1 className="text-3xl font-semibold text-[#0b2545]">{t("com.title")}</h1>
         <p className="mt-1 text-slate-600">{t("com.subtitle")}</p>
@@ -128,3 +128,4 @@ export default function Community() {
     </main>
   );
 }
+

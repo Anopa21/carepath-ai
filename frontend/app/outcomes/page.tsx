@@ -62,7 +62,7 @@ export default function Outcomes() {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-50 p-8">
+    <main className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="mx-auto max-w-6xl">
         <h1 className="text-3xl font-semibold text-[#0b2545]">{t("out.title")}</h1>
         <p className="mt-1 text-slate-600">{t("out.subtitle")}</p>
@@ -135,3 +135,4 @@ export default function Outcomes() {
     </main>
   );
 }
+
