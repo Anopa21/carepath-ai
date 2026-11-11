@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useT11 } from "@/lib/i18n11";
 import { useLang } from "@/components/LanguageProvider";
 import { useAuth } from "@/components/AuthProvider";
+import ConsentSection from "@/components/ConsentSection";
 
 const API = "http://127.0.0.1:8000";
 
@@ -236,6 +237,8 @@ export default function CaseHistoryPanel({
           )}
         </div>
 
+        <ConsentSection caseId={c.id} />
+
         <h3 className="mt-6 font-semibold text-[#0b2545]">{t("hist.history")}</h3>
 
         {!user && (
@@ -283,3 +286,5 @@ export default function CaseHistoryPanel({
     </div>
   );
 }
+
+
