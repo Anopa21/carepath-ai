@@ -5,6 +5,8 @@ from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 
 import models  # noqa: F401
+from auth import StatusChange, require_clinician
+from auth import router as auth_router
 from db import Base, engine, get_db
 from model_adapter import (AdultFeatures, ModelNotConnected, PredictionResponse,
                            is_connected, model_mode, predict_adult)
@@ -20,6 +22,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(auth_router)
 
 ALLOWED_STATUSES = [
     "identified",
@@ -94,7 +98,12 @@ def list_cases(db: Session = Depends(get_db)):
 
 
 @app.patch("/cases/{case_id}/status")
-def update_status(case_id: int, body: StatusUpdate, db: Session = Depends(get_db)):
+def update_status(
+    case_id: int,
+    body: StatusUpdate,
+    db: Session = Depends(get_db),
+    user: dict = Depends(require_clinician),
+):
     if body.status not in ALLOWED_STATUSES:
         raise HTTPException(
             status_code=400,
@@ -103,7 +112,16 @@ def update_status(case_id: int, body: StatusUpdate, db: Session = Depends(get_db
     case = db.query(Case).filter(Case.id == case_id).first()
     if case is None:
         raise HTTPException(status_code=404, detail="Case not found")
+    old_status = case.status
     case.status = body.status
+    db.add(
+        StatusChange(
+            case_id=case_id,
+            from_status=old_status,
+            to_status=body.status,
+            changed_by=user["username"],
+        )
+    )
     db.commit()
     db.refresh(case)
     return case_to_dict(case)

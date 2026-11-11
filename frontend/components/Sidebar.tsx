@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useLang } from "./LanguageProvider";
+import AuthBox from "./AuthBox";
 
 const items = [
   { en: "Preventive Care", ar: "الرعاية الوقائية", href: "/", icon: HeartPulse },
@@ -61,6 +62,8 @@ function NavContent() {
           </button>
         ))}
       </div>
+
+      <AuthBox />
 
       <nav className="flex flex-col gap-1">
         {items.map((item) => {
@@ -135,3 +138,4 @@ export default function Sidebar() {
     </>
   );
 }
+
