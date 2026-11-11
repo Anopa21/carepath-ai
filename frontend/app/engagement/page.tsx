@@ -1,11 +1,22 @@
 ﻿"use client";
 
-import { useState } from "react";
-import { useT7 } from "@/lib/i18n7";
+import { useEffect, useState } from "react";
+import { useT13 } from "@/lib/i18n13";
+
+const API = "http://127.0.0.1:8000";
 
 type Audience = "caregiver" | "adult";
 type Purpose = "invitation" | "reminder" | "follow_up";
 type Lang = "en" | "ar";
+
+type CaseRow = {
+  id: number;
+  person_ref: string;
+  population_group: string;
+  consent_status?: string | null;
+  preferred_language?: string | null;
+  preferred_channel?: string | null;
+};
 
 const TEMPLATES: Record<Audience, Record<Purpose, Record<Lang, string>>> = {
   caregiver: {
@@ -47,18 +58,21 @@ function Segmented<T extends string>({
   options,
   value,
   onChange,
+  disabled,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (v: T) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((o) => (
         <button
           key={o.value}
+          disabled={disabled}
           onClick={() => onChange(o.value)}
-          className={`rounded-full px-4 py-2 text-sm font-medium ring-1 transition ${
+          className={`rounded-full px-4 py-2 text-sm font-medium ring-1 transition disabled:cursor-not-allowed disabled:opacity-50 ${
             value === o.value
               ? "bg-[#0b2545] text-white ring-[#0b2545]"
               : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"
@@ -72,10 +86,29 @@ function Segmented<T extends string>({
 }
 
 export default function Engagement() {
-  const t = useT7();
+  const t = useT13();
   const [audience, setAudience] = useState<Audience>("caregiver");
   const [purpose, setPurpose] = useState<Purpose>("invitation");
   const [msgLang, setMsgLang] = useState<Lang>("en");
+  const [cases, setCases] = useState<CaseRow[]>([]);
+  const [caseId, setCaseId] = useState("");
+
+  useEffect(() => {
+    fetch(`${API}/cases`)
+      .then((r) => r.json())
+      .then((d) => setCases(d.cases))
+      .catch(() => {});
+  }, []);
+
+  const selected = cases.find((c) => String(c.id) === caseId) || null;
+  const blocked = selected && selected.consent_status !== "consented";
+  const locked = Boolean(selected);
+
+  useEffect(() => {
+    if (!selected) return;
+    setAudience(selected.population_group === "child" ? "caregiver" : "adult");
+    setMsgLang(selected.preferred_language === "en" ? "en" : "ar");
+  }, [selected?.id]);
 
   const audiences = [
     { value: "caregiver" as Audience, label: t("eng.aud.caregiver") },
@@ -102,22 +135,41 @@ export default function Engagement() {
 
         <div className="mt-6 space-y-5 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <div>
-            <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
-              {t("eng.audience")}
-            </p>
-            <Segmented options={audiences} value={audience} onChange={setAudience} />
+            <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">{t("eng2.case")}</p>
+            <select
+              value={caseId}
+              onChange={(e) => setCaseId(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+            >
+              <option value="">{t("eng2.generic")}</option>
+              {cases.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.person_ref} — {t(`cons.status.${c.consent_status ?? "not_recorded"}`)}
+                </option>
+              ))}
+            </select>
+            {selected && !blocked && (
+              <p className="mt-2 text-xs text-slate-500">
+                {t("eng2.using")} {t(`cons.lang.${selected.preferred_language ?? "ar"}`)} ·{" "}
+                {t("eng2.channel")}: {t(`cons.channel.${selected.preferred_channel ?? "none"}`)}
+              </p>
+            )}
           </div>
           <div>
             <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
-              {t("eng.type")}
+              {t("eng.audience")}
             </p>
+            <Segmented options={audiences} value={audience} onChange={setAudience} disabled={locked} />
+          </div>
+          <div>
+            <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">{t("eng.type")}</p>
             <Segmented options={purposes} value={purpose} onChange={setPurpose} />
           </div>
           <div>
             <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
               {t("eng.msg_lang")}
             </p>
-            <Segmented options={LANGS} value={msgLang} onChange={setMsgLang} />
+            <Segmented options={LANGS} value={msgLang} onChange={setMsgLang} disabled={locked} />
           </div>
         </div>
 
@@ -128,19 +180,33 @@ export default function Engagement() {
               {t("eng.not_sent")}
             </span>
           </div>
-          <div
-            dir={msgLang === "ar" ? "rtl" : "ltr"}
-            lang={msgLang}
-            className={`mt-4 rounded-2xl bg-teal-50 p-5 text-slate-800 ring-1 ring-teal-100 ${
-              msgLang === "ar" ? "text-lg leading-loose" : "leading-relaxed"
-            }`}
-          >
-            {text}
-          </div>
+
+          {blocked ? (
+            <div
+              className={`mt-4 rounded-2xl p-5 text-sm ${
+                selected?.consent_status === "declined"
+                  ? "bg-red-50 text-red-700 ring-1 ring-red-100"
+                  : "bg-amber-50 text-amber-800 ring-1 ring-amber-100"
+              }`}
+            >
+              {selected?.consent_status === "declined"
+                ? t("eng2.blocked_declined")
+                : t("eng2.blocked_not_recorded")}
+            </div>
+          ) : (
+            <div
+              dir={msgLang === "ar" ? "rtl" : "ltr"}
+              lang={msgLang}
+              className={`mt-4 rounded-2xl bg-teal-50 p-5 text-slate-800 ring-1 ring-teal-100 ${
+                msgLang === "ar" ? "text-lg leading-loose" : "leading-relaxed"
+              }`}
+            >
+              {text}
+            </div>
+          )}
           <p className="mt-3 text-xs text-slate-500">{t("eng.footnote")}</p>
         </div>
       </div>
     </main>
   );
 }
-
