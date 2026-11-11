@@ -12,6 +12,7 @@ class Case(Base):
     flag_type = Column(String)
     flag_reason = Column(Text)
     flag_reason_ar = Column(Text)
+    details_json = Column(Text)
     pathway = Column(String)
     priority = Column(String)
     status = Column(String, default="identified")

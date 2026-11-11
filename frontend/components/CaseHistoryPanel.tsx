@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { useT9 } from "@/lib/i18n9";
+import { useT11 } from "@/lib/i18n11";
 import { useLang } from "@/components/LanguageProvider";
 import { useAuth } from "@/components/AuthProvider";
 
@@ -10,13 +10,22 @@ const API = "http://127.0.0.1:8000";
 type CaseInfo = {
   id: number;
   person_ref: string;
+  population_group?: string;
   flag_type: string;
   flag_reason: string;
   flag_reason_ar?: string | null;
+  details_json?: string | null;
   pathway: string;
   priority: string;
   status: string;
   follow_up_date: string;
+};
+
+type Indicator = { k: string; v: string | number | null; u?: string; hi?: boolean };
+type Details = {
+  completeness?: number | null;
+  indicators?: Indicator[];
+  factors?: { en: string; ar: string }[];
 };
 
 type HistoryRow = {
@@ -25,6 +34,15 @@ type HistoryRow = {
   changed_by: string;
   changed_at: string | null;
 };
+
+function parseDetails(s?: string | null): Details | null {
+  if (!s) return null;
+  try {
+    return JSON.parse(s);
+  } catch {
+    return null;
+  }
+}
 
 function formatTime(iso: string | null, lang: string) {
   if (!iso) return "";
@@ -43,11 +61,13 @@ export default function CaseHistoryPanel({
   c: CaseInfo;
   onClose: () => void;
 }) {
-  const t = useT9();
+  const t = useT11();
   const { lang } = useLang();
   const { user, logout } = useAuth();
   const [rows, setRows] = useState<HistoryRow[] | null>(null);
   const [error, setError] = useState("");
+
+  const details = parseDetails(c.details_json);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -75,6 +95,18 @@ export default function CaseHistoryPanel({
       })
       .catch(() => setError("hist.error"));
   }, [c.id, user]);
+
+  const unitLabel = (u?: string) => {
+    if (!u) return "";
+    const x = t(`unit.${u}`);
+    return x.startsWith("unit.") ? u : x;
+  };
+
+  const valueText = (i: Indicator) => {
+    if (i.v === null || i.v === undefined) return t("common.na");
+    if (i.k === "sex") return t(`sex.${i.v}`);
+    return String(i.v) + (i.u ? " " + unitLabel(i.u) : "");
+  };
 
   const newestFirst = rows ? [...rows].reverse() : [];
   const label = "text-xs uppercase tracking-wide text-slate-500";
@@ -141,6 +173,68 @@ export default function CaseHistoryPanel({
             </dd>
           </div>
         </dl>
+
+        <h3 className="mt-6 font-semibold text-[#0b2545]">{t("det.indicators")}</h3>
+        {!details || !details.indicators || details.indicators.length === 0 ? (
+          <p className="mt-2 text-sm text-slate-500">{t("det.none")}</p>
+        ) : (
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            {details.indicators.map((i) => (
+              <div key={i.k} className="rounded-lg bg-slate-50 p-3 ring-1 ring-slate-100">
+                <p className={label}>{t(`ind.${i.k}`)}</p>
+                <p
+                  className={`mt-1 text-sm font-medium ${
+                    i.v === null || i.v === undefined ? "text-slate-400" : "text-slate-800"
+                  }`}
+                >
+                  <bdi>{valueText(i)}</bdi>
+                </p>
+                {i.hi && (
+                  <span className="mt-1 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">
+                    {t("det.above")}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {details && typeof details.completeness === "number" && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span>{t("det.completeness")}</span>
+              <bdi>{details.completeness}%</bdi>
+            </div>
+            <div className="mt-1 h-2 rounded-full bg-slate-100">
+              <div
+                className="h-2 rounded-full bg-teal-400"
+                style={{ width: `${details.completeness}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {details && details.factors && details.factors.length > 0 && (
+          <>
+            <h3 className="mt-6 font-semibold text-[#0b2545]">{t("det.factors")}</h3>
+            <ul className="mt-2 list-disc space-y-1 ps-5 text-sm text-slate-700">
+              {details.factors.map((f, idx) => (
+                <li key={idx}>{lang === "ar" ? f.ar : f.en}</li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        <div className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {c.population_group === "child" ? (
+            <p>{t("child.logic")}</p>
+          ) : (
+            <p>
+              <span className="font-semibold">{t("field.risk_score")}: </span>
+              {t("adult.risk_na")}
+            </p>
+          )}
+        </div>
 
         <h3 className="mt-6 font-semibold text-[#0b2545]">{t("hist.history")}</h3>
 
