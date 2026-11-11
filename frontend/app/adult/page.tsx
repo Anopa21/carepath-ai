@@ -1,8 +1,10 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { useT } from "@/lib/i18n";
+import { useT13 } from "@/lib/i18n13";
 import { useLang } from "@/components/LanguageProvider";
+import CaseHistoryPanel from "@/components/CaseHistoryPanel";
+import IndicatorChips from "@/components/IndicatorChips";
 
 const API = "http://127.0.0.1:8000";
 
@@ -13,14 +15,11 @@ type CaseRow = {
   flag_type: string;
   flag_reason: string;
   flag_reason_ar?: string | null;
+  details_json?: string | null;
   pathway: string;
   priority: string;
   status: string;
   follow_up_date: string;
-};
-
-type ModelStatus = {
-  adult_model_connected: boolean;
 };
 
 const priorityStyle: Record<string, string> = {
@@ -30,25 +29,26 @@ const priorityStyle: Record<string, string> = {
 };
 
 export default function AdultPathway() {
-  const t = useT();
+  const t = useT13();
   const { lang } = useLang();
   const [cases, setCases] = useState<CaseRow[]>([]);
-  const [model, setModel] = useState<ModelStatus | null>(null);
+  const [connected, setConnected] = useState<boolean | null>(null);
   const [error, setError] = useState(false);
+  const [selected, setSelected] = useState<CaseRow | null>(null);
 
   useEffect(() => {
     fetch(`${API}/cases`)
       .then((r) => r.json())
-      .then((d) =>
-        setCases(d.cases.filter((c: CaseRow) => c.population_group === "adult"))
-      )
+      .then((d) => setCases(d.cases.filter((c: CaseRow) => c.population_group === "adult")))
       .catch(() => setError(true));
 
     fetch(`${API}/model-status`)
       .then((r) => r.json())
-      .then(setModel)
+      .then((d) => setConnected(Boolean(d.adult_model_connected)))
       .catch(() => {});
   }, []);
+
+  const label = "mt-3 text-xs uppercase tracking-wide text-slate-500";
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
@@ -60,17 +60,16 @@ export default function AdultPathway() {
           {t("notice.synthetic")}
         </div>
 
-        {model && (
+        {connected !== null && (
           <div
             className={`mt-4 rounded-xl border px-4 py-3 text-sm ${
-              model.adult_model_connected
+              connected
                 ? "border-teal-200 bg-teal-50 text-teal-800"
                 : "border-amber-200 bg-amber-50 text-amber-800"
             }`}
           >
             <span className="font-semibold">{t("model.label")}</span>
-            {model.adult_model_connected ? t("model.connected") : t("model.not_connected")}{" "}
-            {t("adult.demo_rules")}
+            {connected ? t("model.connected") : t("model.not_connected")} {t("adult.demo_rules")}
           </div>
         )}
 
@@ -82,7 +81,11 @@ export default function AdultPathway() {
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {cases.map((c) => (
-            <div key={c.id} className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <div
+              key={c.id}
+              onClick={() => setSelected(c)}
+              className="cursor-pointer rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition hover:ring-teal-300"
+            >
               <div className="flex items-center justify-between">
                 <span className="text-lg font-semibold text-[#0b2545]" dir="ltr">
                   {c.person_ref}
@@ -96,24 +99,23 @@ export default function AdultPathway() {
                 </span>
               </div>
 
-              <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
-                {t("field.flag_type")}
-              </p>
+              <p className={label}>{t("field.flag_type")}</p>
               <p>{t(`flag.${c.flag_type}`)}</p>
 
-              <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
-                {t("field.reason")}
+              <p className={label}>{t("field.reason")}</p>
+              <p className="text-sm text-slate-700">
+                {lang === "ar" && c.flag_reason_ar ? c.flag_reason_ar : c.flag_reason}
               </p>
-              <p className="text-sm text-slate-700">{lang === "ar" && c.flag_reason_ar ? c.flag_reason_ar : c.flag_reason}</p>
 
-              <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
-                {t("field.risk_score")}
-              </p>
+              <p className={label}>{t("det.indicators")}</p>
+              <div className="mt-1">
+                <IndicatorChips detailsJson={c.details_json} />
+              </div>
+
+              <p className={label}>{t("field.risk_score")}</p>
               <p className="text-sm font-medium text-slate-400">{t("adult.risk_na")}</p>
 
-              <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
-                {t("field.pathway")}
-              </p>
+              <p className={label}>{t("field.pathway")}</p>
               <p>{t(`pathway.${c.pathway}`)}</p>
 
               <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
@@ -125,12 +127,14 @@ export default function AdultPathway() {
                   {t("col.followup")}: <span dir="ltr">{c.follow_up_date}</span>
                 </span>
               </div>
+              <p className="mt-3 text-xs text-teal-700 underline decoration-dotted underline-offset-4">
+                {t("hist.title")}
+              </p>
             </div>
           ))}
         </div>
       </div>
+      {selected && <CaseHistoryPanel c={selected} onClose={() => setSelected(null)} />}
     </main>
   );
 }
-
-

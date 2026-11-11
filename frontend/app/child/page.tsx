@@ -1,8 +1,10 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { useT } from "@/lib/i18n";
+import { useT13 } from "@/lib/i18n13";
 import { useLang } from "@/components/LanguageProvider";
+import CaseHistoryPanel from "@/components/CaseHistoryPanel";
+import IndicatorChips from "@/components/IndicatorChips";
 
 const API = "http://127.0.0.1:8000";
 
@@ -13,6 +15,7 @@ type CaseRow = {
   flag_type: string;
   flag_reason: string;
   flag_reason_ar?: string | null;
+  details_json?: string | null;
   pathway: string;
   priority: string;
   status: string;
@@ -26,19 +29,20 @@ const priorityStyle: Record<string, string> = {
 };
 
 export default function ChildPathway() {
-  const t = useT();
+  const t = useT13();
   const { lang } = useLang();
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [error, setError] = useState(false);
+  const [selected, setSelected] = useState<CaseRow | null>(null);
 
   useEffect(() => {
     fetch(`${API}/cases`)
       .then((r) => r.json())
-      .then((d) =>
-        setCases(d.cases.filter((c: CaseRow) => c.population_group === "child"))
-      )
+      .then((d) => setCases(d.cases.filter((c: CaseRow) => c.population_group === "child")))
       .catch(() => setError(true));
   }, []);
+
+  const label = "mt-3 text-xs uppercase tracking-wide text-slate-500";
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
@@ -63,7 +67,11 @@ export default function ChildPathway() {
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {cases.map((c) => (
-            <div key={c.id} className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <div
+              key={c.id}
+              onClick={() => setSelected(c)}
+              className="cursor-pointer rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition hover:ring-teal-300"
+            >
               <div className="flex items-center justify-between">
                 <span className="text-lg font-semibold text-[#0b2545]" dir="ltr">
                   {c.person_ref}
@@ -77,30 +85,21 @@ export default function ChildPathway() {
                 </span>
               </div>
 
-              <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
-                {t("field.flag_type")}
-              </p>
+              <p className={label}>{t("field.flag_type")}</p>
               <p>{t(`flag.${c.flag_type}`)}</p>
 
-              <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
-                {t("field.reason_demo")}
+              <p className={label}>{t("field.reason_demo")}</p>
+              <p className="text-sm text-slate-700">
+                {lang === "ar" && c.flag_reason_ar ? c.flag_reason_ar : c.flag_reason}
               </p>
-              <p className="text-sm text-slate-700">{lang === "ar" && c.flag_reason_ar ? c.flag_reason_ar : c.flag_reason}</p>
 
-              <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
-                {t("field.completeness")}
-              </p>
-              <p className="text-sm font-medium text-slate-400">{t("common.na")}</p>
+              <p className={label}>{t("det.indicators")}</p>
+              <div className="mt-1">
+                <IndicatorChips detailsJson={c.details_json} />
+              </div>
 
-              <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
-                {t("field.pathway")}
-              </p>
+              <p className={label}>{t("field.pathway")}</p>
               <p>{t(`pathway.${c.pathway}`)}</p>
-
-              <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
-                {t("field.caregiver")}
-              </p>
-              <p className="text-sm text-slate-400">{t("child.comm_soon")}</p>
 
               <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
                 <span>
@@ -111,12 +110,14 @@ export default function ChildPathway() {
                   {t("col.followup")}: <span dir="ltr">{c.follow_up_date}</span>
                 </span>
               </div>
+              <p className="mt-3 text-xs text-teal-700 underline decoration-dotted underline-offset-4">
+                {t("hist.title")}
+              </p>
             </div>
           ))}
         </div>
       </div>
+      {selected && <CaseHistoryPanel c={selected} onClose={() => setSelected(null)} />}
     </main>
   );
 }
-
-
