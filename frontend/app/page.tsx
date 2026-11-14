@@ -5,6 +5,7 @@ import { useT10 } from "@/lib/i18n10";
 import { useLang } from "@/components/LanguageProvider";
 import { useAuth } from "@/components/AuthProvider";
 import CaseHistoryPanel from "@/components/CaseHistoryPanel";
+import StatCards from "@/components/StatCards";
 
 const API = "http://127.0.0.1:8000";
 
@@ -181,15 +182,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-5">
-          {stats.map((s) => (
-            <div key={s.key} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <p className="text-xs uppercase tracking-wide text-slate-500">{t(s.key)}</p>
-              <p className="mt-2 text-3xl font-semibold text-[#0b2545]">{s.value}</p>
-              <p className="mt-1 text-[11px] text-teal-700">{t("label.synthetic")}</p>
-            </div>
-          ))}
-        </div>
+        <StatCards version={cases} />
 
         <div className="mt-6 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
           <input
@@ -302,3 +295,4 @@ export default function Home() {
     </main>
   );
 }
+

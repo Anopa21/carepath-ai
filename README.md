@@ -86,9 +86,10 @@ To finish the integration the ML lead needs to provide: the exported model or se
 - SQLite is used for the demo. PostgreSQL and Docker were preferred in the brief and are not set up.
 - Indicator values, thresholds and consent preferences on the demo cases are invented for illustration. The thresholds are demo rules, not clinical guidance.
 - Arabic text needs review by a native Arabic-speaking health communicator before any real use.
-- Small-cell suppression (groups under 10) is stated in the interface, but no real small groups exist to suppress yet.
+- Small-cell suppression is enforced for measured data on /stats/counts and the home summary cards (counts of 1 to 9 hidden, with basic complementary suppression). Demo counts are shown but marked. The Dashboard, Community and Outcomes charts still count in the browser from /cases, and /cases returns individual rows, so both need work before any real data is loaded.
 - The dataset and model registry stores information only. Registering a model does not connect it, and no verified dataset has been registered yet.
 
 
 
 - npm audit reports moderate vulnerabilities in developer tooling. Review them before any real deployment.
+
