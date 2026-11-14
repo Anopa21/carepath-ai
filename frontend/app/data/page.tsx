@@ -1,22 +1,10 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { useT4 } from "@/lib/i18n4";
+import { useT14 } from "@/lib/i18n14";
+import RegistrySection from "@/components/RegistrySection";
 
 const API = "http://127.0.0.1:8000";
-
-const COLUMNS = [
-  "name",
-  "publisher",
-  "coverage",
-  "population",
-  "year",
-  "format",
-  "link",
-  "licence",
-  "records",
-  "missing",
-];
 
 const PIPELINES = ["child", "adult"];
 
@@ -30,7 +18,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 export default function DataModels() {
-  const t = useT4();
+  const t = useT14();
   const [connected, setConnected] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -39,6 +27,8 @@ export default function DataModels() {
       .then((d) => setConnected(Boolean(d.adult_model_connected)))
       .catch(() => {});
   }, []);
+
+  const dt = "text-xs uppercase tracking-wide text-slate-500";
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
@@ -55,27 +45,19 @@ export default function DataModels() {
             <Card key={p} title={t(`data.${p}_name`)}>
               <dl className="space-y-3 text-sm">
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">
-                    {t("data.population")}
-                  </dt>
+                  <dt className={dt}>{t("data.population")}</dt>
                   <dd>{t(`data.${p}_pop`)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">
-                    {t("data.model")}
-                  </dt>
+                  <dt className={dt}>{t("data.model")}</dt>
                   <dd>{t(`data.${p}_model`)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">
-                    {t("data.logic")}
-                  </dt>
+                  <dt className={dt}>{t("data.logic")}</dt>
                   <dd>{t(`data.${p}_logic`)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">
-                    {t("data.status")}
-                  </dt>
+                  <dt className={dt}>{t("data.status")}</dt>
                   <dd>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
                       {t("data.not_connected")}
@@ -107,47 +89,13 @@ export default function DataModels() {
                 {t("data.way_file_text")}
               </li>
             </ul>
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
-              {["data.model_version", "data.eval_date", "data.train_dataset"].map((k) => (
-                <div key={k} className="rounded-xl bg-slate-50 p-4 ring-1 ring-slate-100">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">{t(k)}</p>
-                  <p className="mt-1 font-semibold text-slate-400">{t("data.na")}</p>
-                </div>
-              ))}
-            </div>
           </Card>
         </div>
 
         <div className="mt-6">
-          <Card title={t("data.registry")}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-start text-sm">
-                <thead className="bg-[#0b2545] text-white">
-                  <tr>
-                    {COLUMNS.map((c) => (
-                      <th key={c} className="whitespace-nowrap px-4 py-3 text-start">
-                        {t(`data.col.${c}`)}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td
-                      colSpan={COLUMNS.length}
-                      className="px-4 py-8 text-center text-slate-400"
-                    >
-                      {t("data.empty")}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <p className="mt-3 text-xs text-slate-500">{t("data.registry_note")}</p>
-          </Card>
+          <RegistrySection />
         </div>
       </div>
     </main>
   );
 }
-

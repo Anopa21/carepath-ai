@@ -8,6 +8,7 @@ import models  # noqa: F401
 from auth import StatusChange, require_clinician
 from auth import router as auth_router
 from consent import router as consent_router
+from registry import router as registry_router
 from db import Base, engine, get_db
 from model_adapter import (AdultFeatures, ModelNotConnected, PredictionResponse,
                            is_connected, model_mode, predict_adult)
@@ -26,6 +27,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(consent_router)
+app.include_router(registry_router)
 
 ALLOWED_STATUSES = [
     "identified",
@@ -127,5 +129,7 @@ def update_status(
     db.commit()
     db.refresh(case)
     return case_to_dict(case)
+
+
 
 

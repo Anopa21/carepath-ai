@@ -36,13 +36,14 @@ A demonstration platform for **preventive-care navigation** in Abu Dhabi. It con
     python migrate_arabic.py
     python add_details.py
     python add_consent.py
+    python seed_registry.py
     cd ..
 
     cd frontend
     npm install
     cd ..
 
-Run the four scripts in that order. They create the local SQLite database (backend/carepath.db, git-ignored) and fill it with synthetic demo cases.
+Run the five scripts in that order. They create the local SQLite database (backend/carepath.db, git-ignored) and fill it with synthetic demo cases.
 
 ## Run
 
@@ -86,4 +87,8 @@ To finish the integration the ML lead needs to provide: the exported model or se
 - Indicator values, thresholds and consent preferences on the demo cases are invented for illustration. The thresholds are demo rules, not clinical guidance.
 - Arabic text needs review by a native Arabic-speaking health communicator before any real use.
 - Small-cell suppression (groups under 10) is stated in the interface, but no real small groups exist to suppress yet.
-- There is no dataset registry in the database yet: the Data and Models page is static text.
+- The dataset and model registry stores information only. Registering a model does not connect it, and no verified dataset has been registered yet.
+
+
+
+- npm audit reports moderate vulnerabilities in developer tooling. Review them before any real deployment.
