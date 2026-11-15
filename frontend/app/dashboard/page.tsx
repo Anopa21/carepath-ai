@@ -13,50 +13,74 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useT2 } from "@/lib/i18n2";
+import { useT15 } from "@/lib/i18n15";
 
 const API = "http://127.0.0.1:8000";
 const NAVY = "#0b2545";
 const TEAL = "#14b8a6";
+const PIE_COLORS = [NAVY, TEAL, "#94a3b8"];
 
-type CaseRow = {
-  id: number;
-  population_group: string;
-  flag_type: string;
-  priority: string;
-  status: string;
+type CellT = {
+  key: string;
+  value: number | null;
+  suppressed: boolean;
+  demo_below_threshold: boolean;
+  origin: string;
 };
+type Counts = { cells: CellT[]; total: CellT };
 
-function countBy(rows: CaseRow[], key: keyof CaseRow) {
-  const map: Record<string, number> = {};
-  rows.forEach((r) => {
-    const k = String(r[key]);
-    map[k] = (map[k] || 0) + 1;
-  });
-  return Object.entries(map).map(([k, value]) => ({ key: k, value }));
+async function load(by: string): Promise<Counts> {
+  const r = await fetch(`${API}/stats/counts?by=${by}`);
+  if (!r.ok) throw new Error();
+  return r.json();
 }
 
 export default function Dashboard() {
-  const t = useT2();
-  const [cases, setCases] = useState<CaseRow[]>([]);
+  const t = useT15();
+  const [status, setStatus] = useState<Counts | null>(null);
+  const [flag, setFlag] = useState<Counts | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch(`${API}/cases`)
-      .then((r) => r.json())
-      .then((d) => setCases(d.cases))
+    Promise.all([load("status"), load("flag_type")])
+      .then(([s, f]) => {
+        setStatus(s);
+        setFlag(f);
+        setError(false);
+      })
       .catch(() => setError(true));
   }, []);
 
-  const byStatus = countBy(cases, "status").map((d) => ({
-    name: t(`status.${d.key}`),
-    value: d.value,
+  const statusCells = status?.cells ?? [];
+  const flagCells = flag?.cells ?? [];
+
+  const barData = statusCells.map((c) => ({
+    name: c.suppressed
+      ? `${t(`status.${c.key}`)} (${t("supp.suppressed")})`
+      : t(`status.${c.key}`),
+    value: c.suppressed ? null : c.value,
   }));
-  const byFlag = countBy(cases, "flag_type").map((d) => ({
-    name: t(`flag.${d.key}`),
-    value: d.value,
-  }));
-  const pieColors = [NAVY, TEAL, "#94a3b8"];
+
+  const pieCells = flagCells.filter((c) => !c.suppressed && c.value !== null);
+  const pieData = pieCells.map((c) => ({ name: t(`flag.${c.key}`), value: c.value as number }));
+
+  const anySuppressed = [...statusCells, ...flagCells].some((c) => c.suppressed);
+  const anyDemoSmall = [...statusCells, ...flagCells].some((c) => c.demo_below_threshold);
+
+  const Notes = () => (
+    <>
+      {anySuppressed && (
+        <p className="mt-2 rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">
+          {t("supp.reason")}
+        </p>
+      )}
+      {anyDemoSmall && (
+        <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">
+          {t("supp.demo")}
+        </p>
+      )}
+    </>
+  );
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
@@ -78,7 +102,7 @@ export default function Dashboard() {
             <h2 className="font-semibold text-[#0b2545]">{t("dash.chart_status")}</h2>
             <div className="mt-4 h-72" dir="ltr">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={byStatus} margin={{ bottom: 40 }}>
+                <BarChart data={barData} margin={{ bottom: 40 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="name" angle={-25} textAnchor="end" interval={0} fontSize={11} />
                   <YAxis allowDecimals={false} />
@@ -87,33 +111,40 @@ export default function Dashboard() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <Notes />
           </div>
 
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <h2 className="font-semibold text-[#0b2545]">{t("dash.chart_flag")}</h2>
-            <div className="mt-4 h-72" dir="ltr">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={byFlag} dataKey="value" nameKey="name" outerRadius={90} label>
-                    {byFlag.map((_, i) => (
-                      <Cell key={i} fill={pieColors[i % pieColors.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            {pieData.length === 0 && flag ? (
+              <p className="mt-6 text-lg font-semibold text-slate-400">{t("supp.suppressed")}</p>
+            ) : (
+              <div className="mt-4 h-72" dir="ltr">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={90} label>
+                      {pieData.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
             <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-600">
-              {byFlag.map((f, i) => (
-                <span key={f.name} className="flex items-center gap-1">
+              {flagCells.map((c, i) => (
+                <span key={c.key} className="flex items-center gap-1">
                   <span
                     className="inline-block h-3 w-3 rounded-full"
-                    style={{ background: pieColors[i % pieColors.length] }}
+                    style={{ background: c.suppressed ? "#cbd5e1" : PIE_COLORS[i % PIE_COLORS.length] }}
                   />
-                  {f.name}
+                  {t(`flag.${c.key}`)}
+                  {c.suppressed ? ` (${t("supp.suppressed")})` : ""}
                 </span>
               ))}
             </div>
+            <Notes />
           </div>
         </div>
 
@@ -130,4 +161,3 @@ export default function Dashboard() {
     </main>
   );
 }
-
