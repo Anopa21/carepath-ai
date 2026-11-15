@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useT5 } from "@/lib/i18n5";
+import { useT15 } from "@/lib/i18n15";
 
 const API = "http://127.0.0.1:8000";
 
@@ -24,41 +24,87 @@ const STATUS_ORDER = [
   "follow_up_required",
   "closed",
 ];
-
-type CaseRow = {
-  id: number;
-  population_group: string;
-  status: string;
-};
-
 const MEASURED = ["i1", "i2", "i3", "i4", "i5", "i6", "i7", "i8"];
 
+type CellT = {
+  key: string;
+  value: number | null;
+  suppressed: boolean;
+  demo_below_threshold: boolean;
+  origin: string;
+};
+type RowT = { key: string; cells: CellT[] };
+type Cross = { data: RowT[] };
+type Counts = { cells: CellT[] };
+
+const zero = (key: string): CellT => ({
+  key,
+  value: 0,
+  suppressed: false,
+  demo_below_threshold: false,
+  origin: "synthetic",
+});
+
 export default function Outcomes() {
-  const t = useT5();
-  const [cases, setCases] = useState<CaseRow[]>([]);
+  const t = useT15();
+  const [cross, setCross] = useState<Cross | null>(null);
+  const [byStatus, setByStatus] = useState<Counts | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch(`${API}/cases`)
-      .then((r) => r.json())
-      .then((d) => setCases(d.cases))
+    Promise.all([
+      fetch(`${API}/stats/crosstab?rows=population_group&cols=status`).then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      }),
+      fetch(`${API}/stats/counts?by=status`).then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      }),
+    ])
+      .then(([c, s]) => {
+        setCross(c);
+        setByStatus(s);
+        setError(false);
+      })
       .catch(() => setError(true));
   }, []);
 
-  const count = (group: string, status: string) =>
-    cases.filter((c) => c.population_group === group && c.status === status).length;
+  const childLabel = t("out.children");
+  const adultLabel = t("out.adults");
 
-  const chartData = STATUS_ORDER.map((s) => ({
-    name: t(`status.${s}`),
-    [t("out.children")]: count("child", s),
-    [t("out.adults")]: count("adult", s),
-  }));
+  const crossCell = (group: string, status: string): CellT =>
+    cross?.data.find((r) => r.key === group)?.cells.find((c) => c.key === status) ?? zero(status);
+  const statusCell = (status: string): CellT =>
+    byStatus?.cells.find((c) => c.key === status) ?? zero(status);
+
+  const chartData = STATUS_ORDER.map((s) => {
+    const child = crossCell("child", s);
+    const adult = crossCell("adult", s);
+    return {
+      name: t(`status.${s}`),
+      [childLabel]: child.suppressed ? null : child.value,
+      [adultLabel]: adult.suppressed ? null : adult.value,
+    };
+  });
+
+  const hidden: string[] = [];
+  let demoSmall = false;
+  if (cross) {
+    STATUS_ORDER.forEach((s) =>
+      ["child", "adult"].forEach((g) => {
+        const c = crossCell(g, s);
+        if (c.suppressed) hidden.push(`${g === "child" ? childLabel : adultLabel} · ${t(`status.${s}`)}`);
+        if (c.demo_below_threshold) demoSmall = true;
+      })
+    );
+  }
 
   const simulated = [
-    { key: "out.s1", value: count("child", "visit_completed") },
-    { key: "out.s2", value: count("adult", "visit_completed") },
-    { key: "out.s3", value: cases.filter((c) => c.status === "follow_up_required").length },
-    { key: "out.s4", value: cases.filter((c) => c.status === "closed").length },
+    { key: "out.s1", cell: crossCell("child", "visit_completed") },
+    { key: "out.s2", cell: crossCell("adult", "visit_completed") },
+    { key: "out.s3", cell: statusCell("follow_up_required") },
+    { key: "out.s4", cell: statusCell("closed") },
   ];
 
   return (
@@ -105,11 +151,25 @@ export default function Outcomes() {
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {simulated.map((s) => (
-              <div key={s.key} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                <p className="text-xs uppercase tracking-wide text-slate-500">{t(s.key)}</p>
-                <p className="mt-2 text-3xl font-semibold text-[#0b2545]">{s.value}</p>
-                <p className="mt-1 text-[11px] text-amber-700">{t("out.sim_label")}</p>
+            {simulated.map(({ key, cell }) => (
+              <div key={key} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+                <p className="text-xs uppercase tracking-wide text-slate-500">{t(key)}</p>
+                {cell.suppressed ? (
+                  <>
+                    <p className="mt-2 text-xl font-semibold text-slate-400">{t("supp.suppressed")}</p>
+                    <p className="mt-1 text-[11px] text-slate-500">{t("supp.reason")}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-2 text-3xl font-semibold text-[#0b2545]">{cell.value}</p>
+                    {cell.demo_below_threshold && (
+                      <p className="mt-1 rounded bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">
+                        {t("supp.demo")}
+                      </p>
+                    )}
+                    <p className="mt-1 text-[11px] text-amber-700">{t("out.sim_label")}</p>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -124,15 +184,31 @@ export default function Outcomes() {
                   <YAxis allowDecimals={false} />
                   <Tooltip />
                   <Legend verticalAlign="top" />
-                  <Bar dataKey={t("out.children")} fill="#0b2545" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey={t("out.adults")} fill="#14b8a6" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey={childLabel} fill="#0b2545" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey={adultLabel} fill="#14b8a6" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            {hidden.length > 0 && (
+              <div className="mt-2 rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                <p>{t("supp.reason")}</p>
+                <ul className="mt-1 list-disc ps-5">
+                  {hidden.map((h) => (
+                    <li key={h}>
+                      {h}: {t("supp.suppressed")}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {demoSmall && (
+              <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">
+                {t("supp.demo")}
+              </p>
+            )}
           </div>
         </section>
       </div>
     </main>
   );
 }
-

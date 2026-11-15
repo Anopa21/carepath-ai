@@ -57,3 +57,37 @@ def counts(by: str, db: Session = Depends(get_db)):
             nxt["secondary"] = True
 
     return {"by": by, "threshold": THRESHOLD, "total": total, "cells": cells}
+
+
+@router.get("/stats/crosstab")
+def crosstab(rows: str, cols: str, db: Session = Depends(get_db)):
+    if rows not in FIELDS or cols not in FIELDS or rows == cols:
+        raise HTTPException(status_code=400, detail=f"'rows' and 'cols' must be two different fields from {FIELDS}.")
+    data = db.query(Case).all()
+    grid = defaultdict(lambda: defaultdict(list))
+    row_keys, col_keys = [], []
+    for r in data:
+        rk, ck = getattr(r, rows), getattr(r, cols)
+        if rk not in row_keys:
+            row_keys.append(rk)
+        if ck not in col_keys:
+            col_keys.append(ck)
+        grid[rk][ck].append(r)
+
+    out = []
+    for rk in row_keys:
+        cells = [make_cell(ck, grid[rk].get(ck, [])) for ck in col_keys]
+        sizes = {ck: len(grid[rk].get(ck, [])) for ck in col_keys}
+        # Complementary suppression within the row.
+        if len([c for c in cells if c["suppressed"]]) == 1:
+            cands = [
+                c for c in cells
+                if not c["suppressed"] and c["origin"] == "measured" and sizes[c["key"]] > 0
+            ]
+            if cands:
+                nxt = min(cands, key=lambda c: sizes[c["key"]])
+                nxt["value"] = None
+                nxt["suppressed"] = True
+                nxt["secondary"] = True
+        out.append({"key": rk, "cells": cells})
+    return {"threshold": THRESHOLD, "col_keys": col_keys, "data": out}
