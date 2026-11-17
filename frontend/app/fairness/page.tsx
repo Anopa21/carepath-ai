@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { useT16 } from "@/lib/i18n16";
+import { useT17 } from "@/lib/i18n17";
 import { useLang } from "@/components/LanguageProvider";
 
 const API = "http://127.0.0.1:8000";
@@ -103,7 +103,7 @@ function adolView(m?: AdolMeta | null): View | null {
     methodKey: "fm.method_adolescent",
     ruleKey: "fm.rule_adolescent",
     limitations: m.limitations ?? [],
-    notes: ["fm.note_us", "fm.note_demo_adolescent"],
+    notes: ["fm.note_us", "fm.note_cohort_adolescent", "fm.note_demo_adolescent"],
   };
 }
 
@@ -128,7 +128,7 @@ const METRICS: [string, keyof Metrics][] = [
 ];
 
 export default function Fairness() {
-  const t = useT16();
+  const t = useT17();
   const { lang } = useLang();
   const [meta, setMeta] = useState<Meta | null>(null);
   const [connected, setConnected] = useState<boolean | null>(null);
@@ -339,3 +339,6 @@ export default function Fairness() {
     </main>
   );
 }
+
+
+
