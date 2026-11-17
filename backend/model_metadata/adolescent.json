@@ -1,0 +1,121 @@
+{
+  "model_name": "CarePath AI Adolescent Elevated HbA1c Screening Prototype",
+  "version": "Logistic Regression candidate; fitted on full reconstructed adolescent cohort",
+  "dataset": "NHANES 2021-2023, United States",
+  "age_group": "12-17 years",
+  "cohort_definition": "Participants aged 12-17 with DIQ010 == 2 (reported no previous diabetes diagnosis) and available HbA1c (LBXGH).",
+  "target": "Elevated HbA1c: LBXGH >= 5.7%; screening-range label, not a diabetes diagnosis.",
+  "target_distribution": {
+    "negative_below_5_7": 657,
+    "positive_5_7_or_higher": 47,
+    "positive_prevalence": 0.06676136363636363
+  },
+  "training_records": 704,
+  "features": [
+    "RIDAGEYR",
+    "BMXWAIST",
+    "BPXOSY1",
+    "BPXODI1",
+    "RIAGENDR",
+    "BMDBMIC"
+  ],
+  "numerical_features": [
+    "RIDAGEYR",
+    "BMXWAIST",
+    "BPXOSY1",
+    "BPXODI1"
+  ],
+  "categorical_features": [
+    "RIAGENDR",
+    "BMDBMIC"
+  ],
+  "preprocessing": {
+    "numerical": "Median imputation followed by StandardScaler.",
+    "categorical": "Most-frequent imputation followed by OneHotEncoder(handle_unknown=\"ignore\")."
+  },
+  "classifier": {
+    "type": "LogisticRegression",
+    "max_iter": 3000,
+    "class_weight": "balanced"
+  },
+  "evaluation": {
+    "method": "Repeated stratified 5-fold cross-validation repeated 5 times; internal resampling. Metrics carried over from the previously generated adolescent evaluation.",
+    "overall_oof_metrics": {
+      "accuracy": 0.5767,
+      "balanced_accuracy": 0.5559,
+      "precision": 0.0831,
+      "recall": 0.5319,
+      "f1_score": 0.1437,
+      "roc_auc": 0.557,
+      "pr_auc": 0.077,
+      "confusion_matrix": [
+        [
+          381,
+          276
+        ],
+        [
+          22,
+          25
+        ]
+      ]
+    },
+    "stability_mean_and_std": {
+      "accuracy": {
+        "mean": 0.5798,
+        "std": 0.0433
+      },
+      "balanced_accuracy": {
+        "mean": 0.5417,
+        "std": 0.0744
+      },
+      "precision": {
+        "mean": 0.0795,
+        "std": 0.0233
+      },
+      "recall": {
+        "mean": 0.4978,
+        "std": 0.1427
+      },
+      "f1_score": {
+        "mean": 0.1368,
+        "std": 0.0396
+      },
+      "roc_auc": {
+        "mean": 0.558,
+        "std": 0.0668
+      },
+      "pr_auc": {
+        "mean": 0.0957,
+        "std": 0.0242
+      }
+    }
+  },
+  "prediction_semantics": {
+    "predict": "Uses scikit-learn default class decision rule.",
+    "predict_proba": "Returns model scores/probabilities; not established as calibrated clinical risks.",
+    "threshold_status": "No clinically selected threshold; the default predict decision is a software default only."
+  },
+  "limitations": [
+    "Experimental research prototype; not a clinical decision tool and not a diagnosis.",
+    "Discrimination is weak (reported ROC-AUC 0.5570); reported precision is low (0.0831).",
+    "Repeated cross-validation is internal resampling, not independent external validation.",
+    "Pipeline was fitted on all 704 records after CV for handoff; this full-cohort fit is not an independent test evaluation.",
+    "NHANES is a United States sample; performance and suitability in Malaysia, Abu Dhabi, or other populations have not been established.",
+    "Scoped only to ages 12-17 and the stated six features; do not use for children under 12 or adults.",
+    "There were 50 participants with HbA1c 5.7% to below 6.5% and none at or above 6.5%; do not describe the positive target as adolescent diabetes."
+  ],
+  "source_files_used": [
+    "DEMO_L.xpt",
+    "BMX_L.xpt",
+    "DIQ_L.xpt",
+    "GHB_L.xpt",
+    "BPXO_L.xpt",
+    "DBQ_L.xpt",
+    "PAQY_L.xpt"
+  ],
+  "source_file_note": "DBQ_L and PAQY_L were included in the source merge but are not model predictors.",
+  "software": {
+    "scikit_learn": "1.8.0",
+    "pandas": "2.2.3"
+  }
+}
