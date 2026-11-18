@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { useT18 } from "@/lib/i18n18";
+import { useT19 } from "@/lib/i18n19";
 import RegistrySection from "@/components/RegistrySection";
 
 const API = "http://127.0.0.1:8000";
@@ -39,7 +39,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 export default function DataModels() {
-  const t = useT18();
+  const t = useT19();
   const [svc, setSvc] = useState<Record<string, Svc>>({ adolescent: "checking", adult: "checking" });
   const [connected, setConnected] = useState<boolean | null>(null);
 
@@ -136,10 +136,7 @@ export default function DataModels() {
               ))}
             </ul>
             {connected !== null && (
-              <p className="mt-4 text-sm">
-                <span className="font-semibold">{t("data.api_status")}</span>
-                {connected ? t("model.connected") : t("model.not_connected")}
-              </p>
+              <p className="mt-4 text-sm">{t("dm.api_line")}</p>
             )}
           </Card>
         </div>
@@ -151,3 +148,6 @@ export default function DataModels() {
     </main>
   );
 }
+
+
+
