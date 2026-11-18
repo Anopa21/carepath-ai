@@ -13,7 +13,7 @@ A demonstration platform for **preventive-care navigation** in Abu Dhabi. It con
 | Per-case consent and preferences | Working; declined or unrecorded consent blocks message previews |
 | English / Arabic with right-to-left layout | Working; Arabic wording is draft and needs native review |
 | Child flags | Rule-based demonstration logic. No child model exists. Adult models are never applied to children |
-| Adult risk score | Not connected. /predict/adult refuses until a real model is connected |
+| Model scores | Two real research models run as separate services (see Model services) but are not used on cases. /predict/adult in this backend still refuses |
 | Model metrics, fairness results, population statistics | Not available until real evaluation results and verified datasets exist |
 | Messaging | Preview only. Nothing is ever sent |
 
@@ -93,4 +93,21 @@ To finish the integration the ML lead needs to provide: the exported model or se
 
 - npm audit reports moderate vulnerabilities in developer tooling. Review them before any real deployment.
 
+
+
+## Model services (research prototypes)
+
+Two research models from the ML team run as separate services. They are not part of this repository: the model files and their package live in a separate folder (carepath_fastapi_backend) kept next to this project, and the .gitignore excludes .joblib files.
+
+- Adult model (18-80): Random Forest V5, port 8001, needs scikit-learn 1.6.1
+- Adolescent model (12-17): Logistic Regression prototype, port 8002, needs scikit-learn 1.8.0
+- Each runs in its own Python environment, because the two models were saved with different scikit-learn versions.
+
+To set up (once): open the carepath_fastapi_backend folder and run setup_windows.bat. This needs Python 3.11 and the py launcher (check with: py -3.11 --version).
+
+To start: run start_windows.bat in that folder and keep both windows open. Check http://127.0.0.1:8001/health and http://127.0.0.1:8002/health. Each should show model_loaded true.
+
+What the site does with them: the Fairness page shows their real evaluation figures, read from the metadata files copied into backend/model_metadata. The Data and Models page shows whether each service is running. No model score is shown on any case, because the demo cases lack the adult model's inputs (waist, weight, income-to-poverty ratio, race/ethnicity code, history of high blood pressure and cholesterol) and the adolescent model covers ages 12-17 only. Missing inputs must never be invented.
+
+Both models are experimental, trained on US NHANES 2021-2023 data, have low precision and are not clinically validated. Their scores are not calibrated risk probabilities.
 
