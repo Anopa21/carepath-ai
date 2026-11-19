@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useLang } from "./LanguageProvider";
+import { ClipboardCheck } from "lucide-react";
 import AuthBox from "./AuthBox";
 
 const items = [
@@ -24,6 +25,7 @@ const items = [
   { en: "Population Dashboard", ar: "لوحة بيانات السكان", href: "/dashboard", icon: LayoutDashboard },
   { en: "Child Pathway", ar: "مسار صحة الطفل", href: "/child", icon: Baby },
   { en: "Adult Pathway", ar: "مسار فحص البالغين", href: "/adult", icon: Stethoscope },
+  { en: "Screening Check", ar: "الفحص الأولي", href: "/screening", icon: ClipboardCheck },
   { en: "Engagement", ar: "التواصل", href: "/engagement", icon: MessageSquare },
   { en: "Community Insights", ar: "رؤى المجتمع", href: "/community", icon: Users },
   { en: "Fairness & Safety", ar: "العدالة والسلامة", href: "/fairness", icon: ShieldCheck },
@@ -138,4 +140,6 @@ export default function Sidebar() {
     </>
   );
 }
+
+
 
