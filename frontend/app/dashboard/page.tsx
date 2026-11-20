@@ -15,7 +15,7 @@ import {
 } from "recharts";
 import { useT15 } from "@/lib/i18n15";
 
-const API = "http://127.0.0.1:8000";
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 const NAVY = "#0b2545";
 const TEAL = "#14b8a6";
 const PIE_COLORS = [NAVY, TEAL, "#94a3b8"];
@@ -161,3 +161,4 @@ export default function Dashboard() {
     </main>
   );
 }
+

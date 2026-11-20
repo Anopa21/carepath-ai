@@ -1,20 +1,22 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { useT19 } from "@/lib/i18n19";
+import { useT21 } from "@/lib/i18n21";
+import { MODELS_ONLINE } from "@/lib/live";
 import RegistrySection from "@/components/RegistrySection";
 
-const API = "http://127.0.0.1:8000";
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
-type Svc = "checking" | "up" | "down";
+type Svc = "checking" | "up" | "down" | "off";
 
 const PIPELINES: { key: string; url: string | null }[] = [
   { key: "child", url: null },
-  { key: "adolescent", url: "http://127.0.0.1:8002/health" },
-  { key: "adult", url: "http://127.0.0.1:8001/health" },
+  { key: "adolescent", url: (process.env.NEXT_PUBLIC_ADOLESCENT_API ?? "http://127.0.0.1:8002") + "/health" },
+  { key: "adult", url: (process.env.NEXT_PUBLIC_ADULT_API ?? "http://127.0.0.1:8001") + "/health" },
 ];
 
 async function ping(url: string): Promise<Svc> {
+  if (!MODELS_ONLINE) return "off";
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 3000);
   try {
@@ -39,7 +41,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 export default function DataModels() {
-  const t = useT19();
+  const t = useT21();
   const [svc, setSvc] = useState<Record<string, Svc>>({ adolescent: "checking", adult: "checking" });
   const [connected, setConnected] = useState<boolean | null>(null);
 
@@ -66,7 +68,7 @@ export default function DataModels() {
         ? "bg-amber-50 text-amber-700"
         : "bg-slate-100 text-slate-600";
   const chipText = (s: Svc | "none") =>
-    s === "up" ? t("dm.running") : s === "down" ? t("dm.down") : s === "checking" ? t("dm.checking") : t("dm.none");
+    s === "up" ? t("dm.running") : s === "off" ? t("live.not_hosted") : s === "down" ? t("dm.down") : s === "checking" ? t("dm.checking") : t("dm.none");
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
@@ -148,6 +150,14 @@ export default function DataModels() {
     </main>
   );
 }
+
+
+
+
+
+
+
+
 
 
 

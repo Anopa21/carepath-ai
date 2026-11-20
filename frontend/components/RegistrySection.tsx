@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useT14 } from "@/lib/i18n14";
 import { useAuth } from "./AuthProvider";
 
-const API = "http://127.0.0.1:8000";
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 type ModelRow = {
   id: number;
@@ -356,3 +356,4 @@ export default function RegistrySection() {
     </div>
   );
 }
+

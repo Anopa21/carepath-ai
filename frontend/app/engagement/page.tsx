@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useT13 } from "@/lib/i18n13";
 
-const API = "http://127.0.0.1:8000";
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 type Audience = "caregiver" | "adult";
 type Purpose = "invitation" | "reminder" | "follow_up";
@@ -210,3 +210,4 @@ export default function Engagement() {
     </main>
   );
 }
+

@@ -6,7 +6,7 @@ import { useLang } from "@/components/LanguageProvider";
 import { useAuth } from "@/components/AuthProvider";
 import ConsentSection from "@/components/ConsentSection";
 
-const API = "http://127.0.0.1:8000";
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 type CaseInfo = {
   id: number;
@@ -286,5 +286,6 @@ export default function CaseHistoryPanel({
     </div>
   );
 }
+
 
 

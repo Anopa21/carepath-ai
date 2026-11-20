@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useT15 } from "@/lib/i18n15";
 
-const API = "http://127.0.0.1:8000";
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 type Cell = {
   key: string;
@@ -84,3 +84,4 @@ export default function StatCards({ version }: { version?: unknown }) {
     </div>
   );
 }
+

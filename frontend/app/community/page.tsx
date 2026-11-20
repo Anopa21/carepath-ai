@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { useT15 } from "@/lib/i18n15";
 
-const API = "http://127.0.0.1:8000";
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 const NA_CARDS = ["c1", "c2", "c3", "c4"];
 
 type CellT = {
@@ -166,3 +166,4 @@ export default function Community() {
     </main>
   );
 }
+

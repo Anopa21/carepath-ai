@@ -1,7 +1,8 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { useT20 } from "@/lib/i18n20";
+import { useT21 } from "@/lib/i18n21";
+import { MODELS_ONLINE } from "@/lib/live";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 const ADULT_API = process.env.NEXT_PUBLIC_ADULT_API ?? "http://127.0.0.1:8001";
@@ -72,7 +73,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 export default function Screening() {
-  const t = useT20();
+  const t = useT21();
   const [form, setForm] = useState<Form>(EMPTY);
   const [result, setResult] = useState<Result | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -244,6 +245,7 @@ export default function Screening() {
           {t("scr.privacy")}
         </div>
 
+        {!MODELS_ONLINE && (<div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{t("live.screening")}</div>)}
         <form onSubmit={submit} className="mt-6 space-y-5 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
           <div className="grid gap-4 md:grid-cols-2">
             <Field label={t("scr.age")}>
@@ -398,7 +400,7 @@ export default function Screening() {
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="submit"
-              disabled={busy || !modelGroup}
+              disabled={busy || !modelGroup || !MODELS_ONLINE}
               className="rounded-lg bg-[#0b2545] px-4 py-2 text-sm text-white hover:bg-[#12335f] disabled:opacity-50"
             >
               {busy ? t("scr.checking") : t("scr.check")}
@@ -477,3 +479,7 @@ export default function Screening() {
     </main>
   );
 }
+
+
+
+

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useT17 } from "@/lib/i18n17";
 import { useLang } from "@/components/LanguageProvider";
 
-const API = "http://127.0.0.1:8000";
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 type Metrics = {
   precision?: number;
@@ -339,6 +339,7 @@ export default function Fairness() {
     </main>
   );
 }
+
 
 
 

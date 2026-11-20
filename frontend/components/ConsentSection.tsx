@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useT12 } from "@/lib/i18n12";
 import { useAuth } from "./AuthProvider";
 
-const API = "http://127.0.0.1:8000";
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 const CONSENT = ["not_recorded", "consented", "declined"];
 const LANGS = ["ar", "en"];
 const CHANNELS = ["sms", "email", "phone", "none"];
@@ -206,3 +206,4 @@ export default function ConsentSection({ caseId }: { caseId: number }) {
     </div>
   );
 }
+
